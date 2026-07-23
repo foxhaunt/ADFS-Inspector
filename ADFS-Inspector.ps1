@@ -261,7 +261,7 @@ Write-Verbose "Querying: $LogName  |  StartTime: $($timeRange.StartTime)  |  Max
 
 $rawEvents = $null
 try {
-    $rawEvents = Get-WinEvent @winEventParams
+    $rawEvents = @(Get-WinEvent @winEventParams)
 }
 catch [System.Exception] {
     if ($_.Exception.Message -like '*No events*' -or $_.Exception.HResult -eq -2147024809) {
@@ -299,7 +299,7 @@ Write-Verbose "Parsed: $($parsed.Count) events"
 # ---------------------------------------------------------------------------
 # Aplicar filtros de post-lectura
 # ---------------------------------------------------------------------------
-$filtered = Invoke-AdfsFilter -Events $parsed -FilterParams $filterParams
+$filtered = @(Invoke-AdfsFilter -Events $parsed -FilterParams $filterParams)
 
 if ($filtered.Count -eq 0) {
     Show-StatusMessage -Message 'No events matched the active filters.' -Type 'Warning'
@@ -313,7 +313,7 @@ Write-Host ''
 # Modo ActivityId: mostrar flujo completo de autenticación
 # ---------------------------------------------------------------------------
 if ($ActivityId) {
-    $flow = Get-SingleFlow -Events $filtered -ActivityId $ActivityId
+    $flow = @(Get-SingleFlow -Events $filtered -ActivityId $ActivityId)
     if (-not $flow -or $flow.Count -eq 0) {
         Show-StatusMessage -Message "No events found for ActivityId: $ActivityId" -Type 'Warning'
         exit 0
