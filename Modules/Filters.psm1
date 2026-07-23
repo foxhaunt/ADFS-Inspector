@@ -16,23 +16,28 @@ Set-StrictMode -Version 2.0
 function Build-WinEventFilter {
     <#
     .SYNOPSIS
-        Construye un FilterHashtable para Get-WinEvent basado en los parámetros CLI.
+        Construye un FilterHashtable para Get-WinEvent basado en los parametros CLI.
     .DESCRIPTION
         Solo incluye filtros que el Event Log puede resolver eficientemente:
-        LogName, StartTime, EndTime, y opcionalmente Id.
-        Los filtros por User/IP/RP se aplican después con Invoke-AdfsFilter.
+        LogName, StartTime, EndTime, ProviderName y opcionalmente Id.
+        Los filtros por User/IP/RP se aplican despues con Invoke-AdfsFilter.
     .PARAMETER LogName
         Nombre del log de Windows (ej: 'AD FS/Admin').
     .PARAMETER StartTime
-        Límite de tiempo inferior.
+        Limite de tiempo inferior.
     .PARAMETER EndTime
-        Límite de tiempo superior.
+        Limite de tiempo superior.
     .PARAMETER EventId
-        ID de evento específico (opcional).
+        ID de evento especifico (opcional).
+    .PARAMETER ProviderName
+        Nombre del proveedor de eventos (opcional). Util para filtrar el log
+        Security por 'AD FS Auditing'.
     .OUTPUTS
         Hashtable para FilterHashtable de Get-WinEvent.
     .EXAMPLE
         Build-WinEventFilter -LogName 'AD FS/Admin' -StartTime (Get-Date).AddHours(-1)
+    .EXAMPLE
+        Build-WinEventFilter -LogName 'Security' -ProviderName 'AD FS Auditing'
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -42,7 +47,8 @@ function Build-WinEventFilter {
 
         [datetime]$StartTime,
         [datetime]$EndTime,
-        [int]$EventId = 0
+        [int]$EventId = 0,
+        [string]$ProviderName = ''
     )
 
     $filter = @{ LogName = $LogName }
@@ -53,10 +59,11 @@ function Build-WinEventFilter {
     if ($PSBoundParameters.ContainsKey('EndTime')) {
         $filter['EndTime'] = $EndTime
     }
-    # Solo añadir Id si se solicitó uno concreto; filtrar por múltiples IDs
-    # es menos eficiente que post-filtrar, así que solo para el caso singular
     if ($EventId -gt 0) {
         $filter['Id'] = $EventId
+    }
+    if (-not [string]::IsNullOrEmpty($ProviderName)) {
+        $filter['ProviderName'] = $ProviderName
     }
 
     return $filter

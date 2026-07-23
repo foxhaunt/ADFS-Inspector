@@ -1,32 +1,32 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    ADFS-Inspector — Herramienta profesional de análisis de logs de AD FS.
+    ADFS-Inspector — Herramienta profesional de analisis de logs de AD FS.
 
 .DESCRIPTION
-    Analiza los eventos del Event Log de AD FS transformándolos en información
-    accionable: flujos de autenticación correlacionados, resúmenes estadísticos,
-    filtrado avanzado y exportación en múltiples formatos.
+    Analiza los eventos del Event Log de AD FS transformandolos en informacion
+    accionable: flujos de autenticacion correlacionados, resumenes estadisticos,
+    filtrado avanzado y exportacion en multiples formatos.
 
     Soporta los protocolos: WS-Trust, WS-Federation, SAML, OAuth 2.0,
     OpenID Connect, MFA, Device Registration y PRT.
 
-    Requiere ejecutarse como Administrador para acceder al log 'AD FS/Admin'.
+    Requiere ejecutarse como Administrador para acceder a los logs de AD FS.
 
 .PARAMETER Today
-    Analizar únicamente los eventos del día de hoy (desde las 00:00).
+    Analizar unicamente los eventos del dia de hoy (desde las 00:00).
 
 .PARAMETER LastMinutes
-    Analizar los últimos N minutos. Incompatible con -Today.
+    Analizar los ultimos N minutos. Incompatible con -Today.
 
 .PARAMETER User
     Filtrar por usuario o UPN. Admite wildcards: -User "*eva*"
 
 .PARAMETER IP
-    Filtrar por dirección IP de cliente. Admite wildcards: -IP "192.168.*"
+    Filtrar por direccion IP de cliente. Admite wildcards: -IP "192.168.*"
 
 .PARAMETER ActivityId
-    Mostrar el flujo completo de una autenticación específica por su Activity ID (GUID).
+    Mostrar el flujo completo de una autenticacion especifica por su Activity ID (GUID).
 
 .PARAMETER EventId
     Filtrar por un Event ID concreto. Ej: -EventId 364
@@ -45,18 +45,18 @@
     Segundos entre cada sondeo en modo -Follow. Default: 5.
 
 .PARAMETER ErrorsOnly
-    Mostrar únicamente eventos de error.
+    Mostrar unicamente eventos de error.
 
 .PARAMETER WarningsOnly
-    Mostrar únicamente eventos de advertencia.
+    Mostrar unicamente eventos de advertencia.
 
 .PARAMETER Summary
-    Mostrar resumen estadístico en lugar de los eventos individuales.
+    Mostrar resumen estadistico en lugar de los eventos individuales.
 
 .PARAMETER View
-    Modo de presentación: Detailed (por defecto) o Timeline.
+    Modo de presentacion: Detailed (por defecto) o Timeline.
     - Detailed: un bloque por evento con todos los campos.
-    - Timeline: una línea por evento.
+    - Timeline: una linea por evento.
 
 .PARAMETER ExportCsv
     Exportar resultados a un archivo CSV en la ruta indicada.
@@ -69,22 +69,42 @@
 
 .PARAMETER LogName
     Nombre del Event Log a leer. Default: 'AD FS/Admin'.
-    Ampliar a otros logs: 'AD FS Tracing/Debug', 'Security', etc.
+    Ignorado si se usa -AllLogs.
+
+.PARAMETER AllLogs
+    Leer TODOS los logs de AD FS simultaneamente:
+      - AD FS/Admin        (WS-Trust, WS-Fed, claims)
+      - AD FS/Operational  (Forms, OAuth/OIDC, dispositivos)
+      - Security           (auditoria AD FS, filtrado por proveedor)
+      - AD FS Tracing/Debug (traza detallada, si esta habilitado)
+    Los eventos de todos los logs se fusionan y ordenan por hora.
 
 .PARAMETER MaxEvents
-    Número máximo de eventos a leer del log. Default: 500.
-    Aumentar para análisis históricos extensos.
+    Numero maximo de eventos a leer POR LOG. Default: 500.
+    Con -AllLogs el total puede ser hasta 4x este valor.
 
 .PARAMETER ListEvents
-    Mostrar el catálogo completo de Event IDs conocidos y salir.
+    Mostrar el catalogo completo de Event IDs conocidos y salir.
+
+.EXAMPLE
+    .\ADFS-Inspector.ps1 -AllLogs -Today -Summary
+    Resumen estadistico de TODOS los logs de AD FS del dia de hoy.
+
+.EXAMPLE
+    .\ADFS-Inspector.ps1 -AllLogs -LastMinutes 30 -View Timeline
+    Timeline con TODOS los eventos de AD FS de los ultimos 30 minutos.
+
+.EXAMPLE
+    .\ADFS-Inspector.ps1 -AllLogs -User "bob@contoso.com" -Today
+    Todos los eventos del usuario bob en todos los logs de hoy.
 
 .EXAMPLE
     .\ADFS-Inspector.ps1 -Today -Summary
-    Resumen estadístico de la autenticación de hoy.
+    Resumen estadistico del log Admin de hoy.
 
 .EXAMPLE
     .\ADFS-Inspector.ps1 -LastMinutes 60 -ErrorsOnly -View Timeline
-    Todos los errores de la última hora en vista compacta.
+    Todos los errores de la ultima hora en vista compacta.
 
 .EXAMPLE
     .\ADFS-Inspector.ps1 -User "eva@foxhaunt.es" -Today
@@ -92,46 +112,34 @@
 
 .EXAMPLE
     .\ADFS-Inspector.ps1 -ActivityId "3f2c1a4b-0000-0000-0000-000000000001"
-    Flujo completo de una autenticación específica.
+    Flujo completo de una autenticacion especifica.
 
 .EXAMPLE
-    .\ADFS-Inspector.ps1 -IP "192.168.1.15" -LastMinutes 30 -ErrorsOnly
-    Errores de una IP específica en los últimos 30 minutos.
+    .\ADFS-Inspector.ps1 -Follow -AllLogs -View Timeline -ErrorsOnly
+    Monitor en tiempo real mostrando solo errores de todos los logs.
 
 .EXAMPLE
-    .\ADFS-Inspector.ps1 -Follow -View Timeline -ErrorsOnly
-    Monitor en tiempo real mostrando solo errores.
-
-.EXAMPLE
-    .\ADFS-Inspector.ps1 -Today -ExportHtml "C:\Reports\adfs-$(Get-Date -f yyyyMMdd).html"
-    Exportar el día de hoy como dashboard HTML.
-
-.EXAMPLE
-    .\ADFS-Inspector.ps1 -EventId 364 -LastMinutes 120 -ExportCsv "C:\Reports\failures.csv"
-    Exportar todos los AUTH_FAILURE de las últimas 2 horas.
-
-.EXAMPLE
-    .\ADFS-Inspector.ps1 -Protocol OAuth -Today -Summary
-    Resumen de autenticaciones OAuth del día.
+    .\ADFS-Inspector.ps1 -AllLogs -Today -ExportHtml "C:\Reports\adfs-$(Get-Date -f yyyyMMdd).html"
+    Exportar el dia de hoy (todos los logs) como dashboard HTML.
 
 .NOTES
     Autor:       ADFS-Inspector Project
-    Versión:     1.0.0
+    Version:     1.1.0
     Compatibilidad: PowerShell 5.1, Windows Server 2019/2016
-    Repositorio: https://github.com/tu-org/ADFS-Inspector
+    Repositorio: https://github.com/foxhaunt/ADFS-Inspector
 #>
 
 [CmdletBinding(DefaultParameterSetName = 'Default')]
 param(
-    # ── Rango de tiempo ─────────────────────────────────────────────────────
+    # -- Rango de tiempo --
     [Parameter(ParameterSetName = 'Today')]
     [switch]$Today,
 
     [Parameter(ParameterSetName = 'LastMinutes')]
-    [ValidateRange(1, 525600)]  # max 1 año en minutos
+    [ValidateRange(1, 525600)]
     [int]$LastMinutes,
 
-    # ── Filtros de contenido ─────────────────────────────────────────────────
+    # -- Filtros de contenido --
     [string]$User,
     [string]$IP,
     [string]$ActivityId,
@@ -139,11 +147,11 @@ param(
     [string]$Protocol,
     [string]$RelyingParty,
 
-    # ── Filtros de severidad ─────────────────────────────────────────────────
+    # -- Filtros de severidad --
     [switch]$ErrorsOnly,
     [switch]$WarningsOnly,
 
-    # ── Modos de operación ───────────────────────────────────────────────────
+    # -- Modos de operacion --
     [switch]$Follow,
     [ValidateRange(1, 300)]
     [int]$FollowInterval = 5,
@@ -152,13 +160,14 @@ param(
     [string]$View = 'Detailed',
     [switch]$ListEvents,
 
-    # ── Exportación ──────────────────────────────────────────────────────────
+    # -- Exportacion --
     [string]$ExportCsv,
     [string]$ExportJson,
     [string]$ExportHtml,
 
-    # ── Configuración avanzada ───────────────────────────────────────────────
+    # -- Configuracion avanzada --
     [string]$LogName = 'AD FS/Admin',
+    [switch]$AllLogs,
     [ValidateRange(1, 100000)]
     [int]$MaxEvents = 500
 )
@@ -167,7 +176,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------------------------------------------------------
-# Cargar módulos (ruta relativa al script)
+# Cargar modulos (ruta relativa al script)
 # ---------------------------------------------------------------------------
 $ModulesPath = Join-Path $PSScriptRoot 'Modules'
 
@@ -190,10 +199,29 @@ foreach ($mod in $moduleFiles) {
 }
 
 # ---------------------------------------------------------------------------
-# Modo ListEvents: mostrar catálogo y salir
+# Definir los logs a consultar
+# ---------------------------------------------------------------------------
+# Cada entrada: Name = nombre del log, Provider = filtro opcional de proveedor
+if ($AllLogs) {
+    $logDefinitions = @(
+        @{ Name = 'AD FS/Admin';          Provider = '' },
+        @{ Name = 'AD FS/Operational';    Provider = '' },
+        @{ Name = 'AD FS Tracing/Debug';  Provider = '' },
+        @{ Name = 'Security';             Provider = 'AD FS Auditing' }
+    )
+    $headerLogName = 'ALL AD FS LOGS'
+} else {
+    $logDefinitions = @(
+        @{ Name = $LogName; Provider = '' }
+    )
+    $headerLogName = $LogName
+}
+
+# ---------------------------------------------------------------------------
+# Modo ListEvents: mostrar catalogo y salir
 # ---------------------------------------------------------------------------
 if ($ListEvents) {
-    Show-Header -LogName $LogName
+    Show-Header -LogName $headerLogName
     Write-Host '  KNOWN EVENT IDs' -ForegroundColor Cyan
     Write-Host ''
     Get-AllKnownEventIds | Format-Table -AutoSize | Out-String | Write-Host
@@ -201,7 +229,7 @@ if ($ListEvents) {
 }
 
 # ---------------------------------------------------------------------------
-# Construir descripción de filtros para la cabecera
+# Construir descripcion de filtros para la cabecera
 # ---------------------------------------------------------------------------
 $filterParams = @{
     User         = $User
@@ -219,15 +247,21 @@ $filterDesc = Get-FilterDescription -Params $filterParams
 # ---------------------------------------------------------------------------
 # Mostrar cabecera
 # ---------------------------------------------------------------------------
-Show-Header -LogName $LogName -FilterDesc $filterDesc
+Show-Header -LogName $headerLogName -FilterDesc $filterDesc
 
 # ---------------------------------------------------------------------------
 # Modo Follow: delegar y salir
 # ---------------------------------------------------------------------------
 if ($Follow) {
-    if (-not (Test-AdfsLogAccess -LogName $LogName)) { exit 1 }
-    Invoke-FollowMode -LogName $LogName -IntervalSeconds $FollowInterval `
-                      -View $View -FilterParams $filterParams
+    if ($AllLogs) {
+        Invoke-FollowModeMulti -LogDefinitions $logDefinitions `
+                               -IntervalSeconds $FollowInterval `
+                               -View $View -FilterParams $filterParams
+    } else {
+        if (-not (Test-AdfsLogAccess -LogName $LogName)) { exit 1 }
+        Invoke-FollowMode -LogName $LogName -IntervalSeconds $FollowInterval `
+                          -View $View -FilterParams $filterParams
+    }
     exit 0
 }
 
@@ -237,47 +271,63 @@ if ($Follow) {
 $timeRange = Resolve-TimeRange -Today:$Today -LastMinutes $LastMinutes
 
 # ---------------------------------------------------------------------------
-# Verificar acceso al log
+# Leer eventos de todos los logs configurados
 # ---------------------------------------------------------------------------
-if (-not (Test-AdfsLogAccess -LogName $LogName)) { exit 1 }
+$allRawEvents = [System.Collections.Generic.List[object]]::new()
+$accessibleLogs = [System.Collections.Generic.List[string]]::new()
+$seenRecordIds  = [System.Collections.Generic.HashSet[long]]::new()
 
-# ---------------------------------------------------------------------------
-# Leer eventos con FilterHashtable (pre-filtrado eficiente en ETW)
-# ---------------------------------------------------------------------------
-$winEventParams = @{
-    FilterHashtable = Build-WinEventFilter -LogName $LogName `
-                          -EventId $EventId
-    MaxEvents       = $MaxEvents
-    ErrorAction     = 'SilentlyContinue'
-}
+foreach ($logDef in $logDefinitions) {
+    $logN = $logDef.Name
+    $prov = $logDef.Provider
 
-# Añadir rango de tiempo al FilterHashtable si aplica
-if ($timeRange.StartTime) {
-    $winEventParams.FilterHashtable['StartTime'] = $timeRange.StartTime
-    $winEventParams.FilterHashtable['EndTime']   = $timeRange.EndTime
-}
-
-Write-Verbose "Querying: $LogName  |  StartTime: $($timeRange.StartTime)  |  MaxEvents: $MaxEvents"
-
-$rawEvents = $null
-try {
-    $rawEvents = @(Get-WinEvent @winEventParams)
-}
-catch [System.Exception] {
-    if ($_.Exception.Message -like '*No events*' -or $_.Exception.HResult -eq -2147024809) {
-        Show-StatusMessage -Message 'No events found in the specified time range.' -Type 'Warning'
-        exit 0
+    # Verificar acceso al log (silencioso si no existe, solo warn)
+    if (-not (Test-AdfsLogAccess -LogName $logN -Silent)) {
+        continue
     }
-    Write-Error "Failed to read event log: $_"
-    exit 1
+
+    $filterHt = Build-WinEventFilter -LogName $logN -EventId $EventId -ProviderName $prov
+    if ($timeRange.StartTime) {
+        $filterHt['StartTime'] = $timeRange.StartTime
+        $filterHt['EndTime']   = $timeRange.EndTime
+    }
+
+    $winEventParams = @{
+        FilterHashtable = $filterHt
+        MaxEvents       = $MaxEvents
+        ErrorAction     = 'SilentlyContinue'
+    }
+
+    Write-Verbose "Querying log: $logN  |  Provider: '$prov'  |  StartTime: $($timeRange.StartTime)"
+
+    try {
+        $rawBatch = @(Get-WinEvent @winEventParams 2>$null)
+        if ($rawBatch.Count -gt 0) {
+            $accessibleLogs.Add($logN)
+            foreach ($ev in $rawBatch) {
+                # Deduplicar por EventRecordId (puede ser null en Security, usar Id+TimeCreated)
+                $dedupKey = if ($ev.RecordId) { [long]$ev.RecordId } else { [long]0 }
+                $isNew = if ($dedupKey -ne 0) { $seenRecordIds.Add($dedupKey) } else { $true }
+                if ($isNew) { $allRawEvents.Add($ev) }
+            }
+            Show-StatusMessage -Message "Read $($rawBatch.Count) events from '$logN'." -Type 'Info'
+        } else {
+            Show-StatusMessage -Message "No events in '$logN' for the specified range." -Type 'Info'
+        }
+    }
+    catch {
+        Write-Verbose "Error reading $logN : $_"
+    }
 }
 
-if (-not $rawEvents -or $rawEvents.Count -eq 0) {
-    Show-StatusMessage -Message 'No events found matching the specified criteria.' -Type 'Warning'
+if ($allRawEvents.Count -eq 0) {
+    Show-StatusMessage -Message 'No events found in any AD FS log for the specified criteria.' -Type 'Warning'
     exit 0
 }
 
-Show-StatusMessage -Message "Read $($rawEvents.Count) raw events from '$LogName'." -Type 'Info'
+$rawEvents = $allRawEvents.ToArray()
+
+Show-StatusMessage -Message "Total: $($rawEvents.Count) raw events from $($accessibleLogs.Count) log(s)." -Type 'Info'
 
 # ---------------------------------------------------------------------------
 # Parsear eventos
@@ -310,7 +360,7 @@ Show-StatusMessage -Message "Filtered: $($filtered.Count) events match your crit
 Write-Host ''
 
 # ---------------------------------------------------------------------------
-# Modo ActivityId: mostrar flujo completo de autenticación
+# Modo ActivityId: mostrar flujo completo de autenticacion
 # ---------------------------------------------------------------------------
 if ($ActivityId) {
     $flow = @(Get-SingleFlow -Events $filtered -ActivityId $ActivityId)
@@ -331,7 +381,6 @@ elseif ($Summary) {
 # ---------------------------------------------------------------------------
 else {
     if ($View -eq 'Timeline') {
-        # Cabecera de columnas para la vista timeline
         Write-Host "  $('TIME'.PadRight(10))  $('  ID'.PadRight(6))  $('EVENT'.PadRight(28))$('USER'.PadRight(35))CLIENT IP" -ForegroundColor DarkCyan
         Write-Host "  $('-' * 8)  $('-' * 4)  $('-' * 26)$('-' * 33)$('-' * 15)" -ForegroundColor DarkGray
         foreach ($ev in ($filtered | Sort-Object TimeCreated)) {

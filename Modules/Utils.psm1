@@ -274,7 +274,92 @@ function Invoke-FollowMode {
 }
 
 # ---------------------------------------------------------------------------
-# Función pública: verificar que el log de AD FS existe y hay permisos
+# Funcion publica: modo Follow multi-log (tail -f sobre multiples logs)
+# ---------------------------------------------------------------------------
+function Invoke-FollowModeMulti {
+    <#
+    .SYNOPSIS
+        Monitorea multiples logs de AD FS en tiempo real, fusionando los eventos.
+    .PARAMETER LogDefinitions
+        Array de hashtables @{ Name='...'; Provider='...' } con los logs a monitorear.
+    .PARAMETER IntervalSeconds
+        Segundos entre cada sondeo.
+    .PARAMETER View
+        Modo de vista: Detailed | Timeline.
+    .PARAMETER FilterParams
+        Hashtable de filtros adicionales.
+    .EXAMPLE
+        Invoke-FollowModeMulti -LogDefinitions $defs -IntervalSeconds 5 -View Timeline
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable[]]$LogDefinitions,
+        [int]$IntervalSeconds = 5,
+        [ValidateSet('Detailed','Timeline')]
+        [string]$View = 'Timeline',
+        [hashtable]$FilterParams = @{}
+    )
+
+    $logNames = ($LogDefinitions | ForEach-Object { $_.Name }) -join ', '
+    Write-Host ''
+    Write-Host "  [*] FOLLOW MODE -- ALL AD FS LOGS" -ForegroundColor Cyan
+    Write-Host "  Logs: $logNames" -ForegroundColor DarkGray
+    Write-Host "  Interval: ${IntervalSeconds}s  |  View: $View  |  Press Ctrl+C to stop" -ForegroundColor DarkGray
+    Write-Host ''
+
+    $lastCheck = (Get-Date).AddSeconds(-$IntervalSeconds)
+    $seenRecordIds = [System.Collections.Generic.HashSet[long]]::new()
+
+    while ($true) {
+        $now = Get-Date
+        $batchList = [System.Collections.Generic.List[object]]::new()
+
+        foreach ($logDef in $LogDefinitions) {
+            $logN = $logDef.Name
+            $prov = $logDef.Provider
+            try {
+                $filter = @{
+                    LogName   = $logN
+                    StartTime = $lastCheck
+                    EndTime   = $now
+                }
+                if (-not [string]::IsNullOrEmpty($prov)) { $filter['ProviderName'] = $prov }
+
+                $rawBatch = Get-WinEvent -FilterHashtable $filter -ErrorAction SilentlyContinue
+                if ($rawBatch) {
+                    foreach ($ev in $rawBatch) {
+                        $dedupKey = if ($ev.RecordId) { [long]$ev.RecordId } else { [long]0 }
+                        $isNew = if ($dedupKey -ne 0) { $seenRecordIds.Add($dedupKey) } else { $true }
+                        if ($isNew) { $batchList.Add($ev) }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        if ($batchList.Count -gt 0) {
+            $parsedBatch = [System.Collections.Generic.List[PSCustomObject]]::new()
+            foreach ($raw in $batchList) {
+                try { $parsedBatch.Add((ConvertTo-AdfsEvent -RawEvent $raw)) } catch { }
+            }
+            $filteredBatch = @(Invoke-AdfsFilter -Events $parsedBatch.ToArray() -FilterParams $FilterParams)
+            foreach ($ev in ($filteredBatch | Sort-Object TimeCreated)) {
+                if ($View -eq 'Timeline') {
+                    Show-TimelineEvent -Event $ev
+                } else {
+                    Show-DetailedEvent -Event $ev
+                }
+            }
+        }
+
+        $lastCheck = $now
+        Start-Sleep -Seconds $IntervalSeconds
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Funcion publica: verificar que el log de AD FS existe y hay permisos
 # ---------------------------------------------------------------------------
 function Test-AdfsLogAccess {
     <#
@@ -282,6 +367,8 @@ function Test-AdfsLogAccess {
         Verifica que el log especificado existe y es accesible.
     .PARAMETER LogName
         Nombre del log a verificar.
+    .PARAMETER Silent
+        Si se especifica, suprime los mensajes de error. Util para logs opcionales.
     .OUTPUTS
         Boolean: $true si accesible, $false si no.
     #>
@@ -289,7 +376,9 @@ function Test-AdfsLogAccess {
     [OutputType([bool])]
     param(
         [Parameter(Mandatory)]
-        [string]$LogName
+        [string]$LogName,
+
+        [switch]$Silent
     )
 
     try {
@@ -297,14 +386,20 @@ function Test-AdfsLogAccess {
         return $true
     }
     catch [System.UnauthorizedAccessException] {
-        Write-Host "  [!] Access denied to '$LogName'. Run as Administrator." -ForegroundColor Red
+        if (-not $Silent) {
+            Write-Host "  [!] Access denied to '$LogName'. Run as Administrator." -ForegroundColor Red
+        }
         return $false
     }
     catch {
-        Write-Host "  [!] Log '$LogName' not found or not accessible." -ForegroundColor Red
-        Write-Host "      Available AD FS logs:" -ForegroundColor DarkGray
-        Get-WinEvent -ListLog 'AD FS*' -ErrorAction SilentlyContinue |
-            ForEach-Object { Write-Host "      -- $($_.LogName)" -ForegroundColor DarkGray }
+        if (-not $Silent) {
+            Write-Host "  [!] Log '$LogName' not found or not accessible." -ForegroundColor Red
+            Write-Host "      Available AD FS logs:" -ForegroundColor DarkGray
+            Get-WinEvent -ListLog 'AD FS*' -ErrorAction SilentlyContinue |
+                ForEach-Object { Write-Host "      -- $($_.LogName)" -ForegroundColor DarkGray }
+        } else {
+            Write-Verbose "Log '$LogName' not available (skipped)."
+        }
         return $false
     }
 }
@@ -343,4 +438,5 @@ function Get-FilterDescription {
 }
 
 Export-ModuleMember -Function Export-ToCsv, Export-ToJson, Export-ToHtml,
-                               Invoke-FollowMode, Test-AdfsLogAccess, Get-FilterDescription
+                               Invoke-FollowMode, Invoke-FollowModeMulti,
+                               Test-AdfsLogAccess, Get-FilterDescription

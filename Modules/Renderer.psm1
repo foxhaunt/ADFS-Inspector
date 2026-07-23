@@ -347,9 +347,16 @@ function Show-Header {
 
     Write-Host ''
     Write-Host ('+' + ('=' * 68) + '+') -ForegroundColor Cyan
-    Write-Host '|           ADFS-INSPECTOR  v1.0  --  AD FS Log Analyzer           |' -ForegroundColor Cyan
+    Write-Host '|           ADFS-INSPECTOR  v1.1  --  AD FS Log Analyzer           |' -ForegroundColor Cyan
     Write-Host ('+' + ('=' * 68) + '+') -ForegroundColor Cyan
-    Write-Host "  Log    : $LogName" -ForegroundColor $script:ColMuted
+
+    if ($LogName -eq 'ALL AD FS LOGS') {
+        Write-Host '  Logs   : ALL AD FS LOGS' -ForegroundColor $script:ColMuted
+        Write-Host '           (Admin + Operational + Tracing/Debug + Security/Auditing)' -ForegroundColor DarkGray
+    } else {
+        Write-Host "  Log    : $LogName" -ForegroundColor $script:ColMuted
+    }
+
     Write-Host "  Time   : $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor $script:ColMuted
     if ($FilterDesc) {
         Write-Host "  Filter : $FilterDesc" -ForegroundColor $script:ColMuted
