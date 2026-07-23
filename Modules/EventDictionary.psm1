@@ -38,7 +38,7 @@ $script:EventCatalog = @{
     208 = @{ Name = 'PASSWORD_EXPIRED';          Severity = 'Warning'; Protocol = 'WS-Trust';  Description = 'User password has expired' }
     209 = @{ Name = 'INVALID_CREDENTIAL';        Severity = 'Error';   Protocol = 'WS-Trust';  Description = 'Invalid username or password' }
 
-    # ── Token issuance ──────────────────────────────────────────────────────
+    # ── Token issuance / Claims pipeline (eventos reales WS2019) ───────────
     299 = @{ Name = 'TOKEN_REQUEST';             Severity = 'Info';    Protocol = 'WS-Trust';  Description = 'Security token request received' }
     300 = @{ Name = 'CLAIMS_PIPELINE_START';     Severity = 'Info';    Protocol = 'WS-Trust';  Description = 'Claims pipeline processing started' }
     301 = @{ Name = 'CLAIMS_LOOKUP';             Severity = 'Info';    Protocol = 'WS-Trust';  Description = 'Attribute store lookup executed' }
@@ -51,6 +51,19 @@ $script:EventCatalog = @{
     308 = @{ Name = 'TOKEN_SIGN_ERROR';          Severity = 'Error';   Protocol = 'WS-Trust';  Description = 'Token signing failed' }
     309 = @{ Name = 'TOKEN_ENCRYPT_ERROR';       Severity = 'Error';   Protocol = 'WS-Trust';  Description = 'Token encryption failed' }
     310 = @{ Name = 'DELEGATION_TOKEN_ISSUED';   Severity = 'Success'; Protocol = 'WS-Trust';  Description = 'Delegation token issued' }
+    # Eventos reales observados en ADFS WS2019 (AD FS/Admin)
+    324 = @{ Name = 'TOKEN_ISSUED_SUCCESS';      Severity = 'Success'; Protocol = 'WS-Fed';    Description = 'The Federation Service issued a valid token' }
+    325 = @{ Name = 'TOKEN_ISSUE_FAILED';        Severity = 'Error';   Protocol = 'WS-Fed';    Description = 'The Federation Service failed to issue a token' }
+    326 = @{ Name = 'AUTH_REQUEST_RECEIVED';     Severity = 'Info';    Protocol = 'WS-Fed';    Description = 'Authentication request received from relying party' }
+    327 = @{ Name = 'SIGNOUT_INITIATED';         Severity = 'Info';    Protocol = 'WS-Fed';    Description = 'Sign-out initiated by relying party' }
+    333 = @{ Name = 'ACCESS_DENIED';             Severity = 'Error';   Protocol = 'WS-Fed';    Description = 'Access control policy denied the request' }
+    338 = @{ Name = 'PROXY_TOKEN_ISSUED';        Severity = 'Success'; Protocol = 'WAP';       Description = 'Proxy issued token to client' }
+    342 = @{ Name = 'WSTRUST_REQUEST';           Severity = 'Info';    Protocol = 'WS-Trust';  Description = 'WS-Trust token request received' }
+    343 = @{ Name = 'WSTRUST_RESPONSE';          Severity = 'Info';    Protocol = 'WS-Trust';  Description = 'WS-Trust token response sent' }
+    # 500-502: Claims pipeline (uno por claim emitido)
+    500 = @{ Name = 'CLAIMS_PIPELINE';           Severity = 'Info';    Protocol = 'Claims';    Description = 'Claims pipeline execution started' }
+    501 = @{ Name = 'CLAIM_ISSUED';              Severity = 'Info';    Protocol = 'Claims';    Description = 'Individual claim issued in pipeline (one event per claim)' }
+    502 = @{ Name = 'CLAIMS_PIPELINE_END';       Severity = 'Info';    Protocol = 'Claims';    Description = 'Claims pipeline execution completed' }
 
     # ── Errores de autenticación (rango clásico AD FS 2.x / 3.x) ──────────
     364 = @{ Name = 'AUTH_FAILURE';              Severity = 'Error';   Protocol = 'WS-Trust';  Description = 'Authentication failed — see details' }
@@ -107,11 +120,13 @@ $script:EventCatalog = @{
     703 = @{ Name = 'SEAMLESS_SSO_SUCCESS';      Severity = 'Success'; Protocol = 'PRT';       Description = 'Seamless SSO authentication succeeded' }
     704 = @{ Name = 'SEAMLESS_SSO_FAILURE';      Severity = 'Error';   Protocol = 'PRT';       Description = 'Seamless SSO authentication failed' }
 
-    # ── Audit (rango alto, comunes en Security log) ─────────────────────────
-    1000 = @{ Name = 'AUDIT_SUCCESS';            Severity = 'Success'; Protocol = 'Audit';     Description = 'Successful audit event' }
-    1001 = @{ Name = 'AUDIT_FAILURE';            Severity = 'Error';   Protocol = 'Audit';     Description = 'Failed audit event' }
-    1007 = @{ Name = 'TOKEN_ISSUED_AUDIT';       Severity = 'Success'; Protocol = 'Audit';     Description = 'Token issued (audit)' }
-    1008 = @{ Name = 'AUTH_FAILURE_AUDIT';       Severity = 'Error';   Protocol = 'Audit';     Description = 'Authentication failed (audit)' }
+    # ── Audit (AD FS/Admin — rango 1000, comunes en WS2019) ────────────────
+    1000 = @{ Name = 'AUDIT_SUCCESS';            Severity = 'Success'; Protocol = 'Audit';     Description = 'Successful audit event (token issued or auth succeeded)' }
+    1001 = @{ Name = 'AUDIT_FAILURE';            Severity = 'Error';   Protocol = 'Audit';     Description = 'Failed audit event (auth or token failure)' }
+    1002 = @{ Name = 'AUDIT_SIGNOUT';            Severity = 'Info';    Protocol = 'Audit';     Description = 'Sign-out audit event' }
+    1006 = @{ Name = 'AUDIT_POLICY_CHANGE';      Severity = 'Warning'; Protocol = 'Audit';     Description = 'AD FS policy change detected' }
+    1007 = @{ Name = 'TOKEN_ISSUED_AUDIT';       Severity = 'Success'; Protocol = 'Audit';     Description = 'Token issued (audit record)' }
+    1008 = @{ Name = 'AUTH_FAILURE_AUDIT';       Severity = 'Error';   Protocol = 'Audit';     Description = 'Authentication failed (audit record)' }
 }
 
 # ---------------------------------------------------------------------------

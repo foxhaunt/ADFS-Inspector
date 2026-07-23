@@ -129,10 +129,11 @@ function Show-TimelineEvent {
         $icon    = Get-SeverityIcon -Severity $Event.Severity
         $color   = Get-SeverityColor -Severity $Event.Severity
         $timeStr = $Event.TimeCreated.ToString('HH:mm:ss')
+        $idStr   = $Event.EventId.ToString().PadLeft(4)
 
         Write-Host $timeStr -ForegroundColor $script:ColMuted -NoNewline
-        Write-Host '  ' -NoNewline
-        Write-Host "$icon $($Event.EventName.PadRight(28))" -ForegroundColor $color -NoNewline
+        Write-Host "  $idStr  " -ForegroundColor DarkGray -NoNewline
+        Write-Host "$icon $($Event.EventName.PadRight(26))" -ForegroundColor $color -NoNewline
 
         $user = if ($Event.User) { $Event.User.PadRight(35) } else { ''.PadRight(35) }
         Write-Host $user -ForegroundColor $script:ColValue -NoNewline

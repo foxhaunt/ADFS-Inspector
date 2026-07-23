@@ -332,8 +332,8 @@ elseif ($Summary) {
 else {
     if ($View -eq 'Timeline') {
         # Cabecera de columnas para la vista timeline
-        Write-Host "  $('TIME'.PadRight(10))  $('EVENT'.PadRight(30))$('USER'.PadRight(35))CLIENT IP" -ForegroundColor DarkCyan
-        Write-Host "  $('─' * 8)  $('─' * 28)$('─' * 33)$('─' * 15)" -ForegroundColor DarkGray
+        Write-Host "  $('TIME'.PadRight(10))  $('  ID'.PadRight(6))  $('EVENT'.PadRight(28))$('USER'.PadRight(35))CLIENT IP" -ForegroundColor DarkCyan
+        Write-Host "  $('-' * 8)  $('-' * 4)  $('-' * 26)$('-' * 33)$('-' * 15)" -ForegroundColor DarkGray
         foreach ($ev in ($filtered | Sort-Object TimeCreated)) {
             Show-TimelineEvent -Event $ev
         }
