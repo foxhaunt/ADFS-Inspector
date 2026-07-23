@@ -252,10 +252,10 @@ function Show-Summary {
     )
 
     $total    = $Events.Count
-    $success  = ($Events | Where-Object { $_.Severity -eq 'Success'  }).Count
-    $errors   = ($Events | Where-Object { $_.Severity -eq 'Error'    }).Count
-    $warnings = ($Events | Where-Object { $_.Severity -eq 'Warning'  }).Count
-    $info     = ($Events | Where-Object { $_.Severity -eq 'Info'     }).Count
+    $success  = @($Events | Where-Object { $_.Severity -eq 'Success'  }).Count
+    $errors   = @($Events | Where-Object { $_.Severity -eq 'Error'    }).Count
+    $warnings = @($Events | Where-Object { $_.Severity -eq 'Warning'  }).Count
+    $info     = @($Events | Where-Object { $_.Severity -eq 'Info'     }).Count
 
     $topUsers = @($Events | Where-Object { $_.Severity -eq 'Error' -and $_.User } |
                 Group-Object User | Sort-Object Count -Descending | Select-Object -First 5)
@@ -267,7 +267,7 @@ function Show-Summary {
                   Group-Object Protocol | Sort-Object Count -Descending)
 
     $uniqueFlows = @($Events | Where-Object { $_.ActivityId } |
-                   Select-Object -ExpandProperty ActivityId -Unique).Count
+                    Select-Object -ExpandProperty ActivityId -Unique).Count
 
     $firstTime = if ($total -gt 0) {
         ($Events | Sort-Object TimeCreated | Select-Object -First 1).TimeCreated

@@ -125,10 +125,10 @@ function Export-ToHtml {
     )
 
     $total    = $Events.Count
-    $success  = ($Events | Where-Object { $_.Severity -eq 'Success'  }).Count
-    $errors   = ($Events | Where-Object { $_.Severity -eq 'Error'    }).Count
-    $warnings = ($Events | Where-Object { $_.Severity -eq 'Warning'  }).Count
-    $info     = ($Events | Where-Object { $_.Severity -eq 'Info'     }).Count
+    $success  = @($Events | Where-Object { $_.Severity -eq 'Success'  }).Count
+    $errors   = @($Events | Where-Object { $_.Severity -eq 'Error'    }).Count
+    $warnings = @($Events | Where-Object { $_.Severity -eq 'Warning'  }).Count
+    $info     = @($Events | Where-Object { $_.Severity -eq 'Info'     }).Count
 
     $firstTime = if ($total -gt 0) { ($Events | Sort-Object TimeCreated | Select-Object -First 1).TimeCreated.ToString('yyyy-MM-dd HH:mm:ss') } else { 'N/A' }
     $lastTime  = if ($total -gt 0) { ($Events | Sort-Object TimeCreated | Select-Object -Last  1).TimeCreated.ToString('yyyy-MM-dd HH:mm:ss') } else { 'N/A' }
