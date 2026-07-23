@@ -1,397 +1,397 @@
 # ADFS-Inspector
 
-**Professional AD FS log analysis tool for Windows Server 2019 / PowerShell 5.1**
+**Herramienta profesional de análisis de logs de AD FS para Windows Server 2019 / PowerShell 5.1**
 
-ADFS-Inspector transforms raw Windows Event Log entries from AD FS into actionable intelligence: correlated authentication flows, statistical summaries, advanced filtering, and exportable dashboards — without any external dependencies.
-
----
-
-## Features
-
-- **Full event parsing** — extracts User, UPN, Client IP, Activity ID, Correlation ID, Endpoint, Protocol, Relying Party, Claims Provider, Error Detail from raw `Message` fields using precompiled regex
-- **Event dictionary** — 60+ known AD FS Event IDs with human-readable names, severity, and protocol labels (WS-Trust, SAML, OAuth, OIDC, MFA, Device Registration, PRT)
-- **Authentication flow correlation** — groups events by Activity ID to show the complete lifecycle of a single authentication attempt
-- **Multiple views** — detailed per-event blocks or compact one-line timeline
-- **Real-time follow mode** — like `tail -f`, prints new events without refreshing the screen
-- **Statistical summary** — totals by severity, top failing users, top source IPs, protocol distribution
-- **Exports** — CSV, JSON, and a self-contained HTML dashboard (no CDN dependencies, IE11 compatible)
-- **Efficient querying** — uses `Get-WinEvent -FilterHashtable` for ETW-level pre-filtering; post-filtering only where unavoidable
-- **Modular architecture** — 6 independent modules, extensible without touching the core
+ADFS-Inspector transforma los eventos crudos del Event Log de Windows procedentes de AD FS en información accionable: flujos de autenticación correlacionados, resúmenes estadísticos, filtrado avanzado y dashboards exportables — sin ninguna dependencia externa.
 
 ---
 
-## Requirements
+## Características
 
-| Requirement | Value |
+- **Parseo completo de eventos** — extrae Usuario, UPN, IP de cliente, Activity ID, Correlation ID, Endpoint, Protocolo, Relying Party, Claims Provider y Detalle de error desde los campos `Message` crudos mediante regex precompiladas
+- **Diccionario de eventos** — más de 60 Event IDs conocidos de AD FS con nombres legibles, severidad y etiqueta de protocolo (WS-Trust, SAML, OAuth, OIDC, MFA, Device Registration, PRT)
+- **Correlación de flujos de autenticación** — agrupa eventos por Activity ID para mostrar el ciclo de vida completo de un intento de autenticación
+- **Múltiples vistas** — bloques detallados por evento o timeline compacta de una línea
+- **Modo Follow en tiempo real** — como `tail -f`, imprime nuevos eventos sin recargar la pantalla
+- **Resumen estadístico** — totales por severidad, usuarios con más fallos, IPs de origen más activas, distribución por protocolo
+- **Exportaciones** — CSV, JSON y dashboard HTML autocontenido (sin dependencias de CDN, compatible con IE11)
+- **Consultas eficientes** — utiliza `Get-WinEvent -FilterHashtable` para pre-filtrado a nivel ETW; post-filtrado solo cuando es inevitable
+- **Arquitectura modular** — 6 módulos independientes, extensibles sin tocar el núcleo
+
+---
+
+## Requisitos
+
+| Requisito | Valor |
 |---|---|
 | PowerShell | 5.1 (Windows PowerShell) |
-| OS | Windows Server 2019 / 2016 |
-| Permissions | Local Administrator (to read `AD FS/Admin` log) |
-| External modules | None |
+| Sistema operativo | Windows Server 2019 / 2016 |
+| Permisos | Administrador local (para leer el log `AD FS/Admin`) |
+| Módulos externos | Ninguno |
 
 ---
 
-## Installation
+## Instalación
 
 ```powershell
-# 1. Download or clone the repository
-git clone https://github.com/tu-org/ADFS-Inspector.git
+# 1. Descargar o clonar el repositorio
+git clone https://github.com/foxhaunt/ADFS-Inspector.git
 
-# 2. Copy to your preferred location on the AD FS server
-#    (or run directly from the download path)
+# 2. Copiar a la ubicación preferida en el servidor AD FS
+#    (o ejecutar directamente desde la ruta de descarga)
 Copy-Item -Recurse .\ADFS-Inspector\ C:\Tools\ADFS-Inspector\
 
-# 3. Unblock files if downloaded from internet
+# 3. Desbloquear archivos si se descargaron desde internet
 Get-ChildItem C:\Tools\ADFS-Inspector -Recurse | Unblock-File
 
-# 4. Allow script execution (if not already set)
+# 4. Permitir ejecución de scripts (si no está ya configurado)
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-No module installation or `Import-Module` needed — the script loads its own modules automatically.
+No es necesaria ninguna instalación de módulos ni `Import-Module` — el script carga sus propios módulos automáticamente.
 
 ---
 
-## Quick Start
+## Inicio rápido
 
 ```powershell
 cd C:\Tools\ADFS-Inspector
 
-# Summary of today's authentication activity
+# Resumen de la actividad de autenticación de hoy
 .\ADFS-Inspector.ps1 -Today -Summary
 
-# All errors in the last hour, timeline view
+# Todos los errores de la última hora en vista timeline
 .\ADFS-Inspector.ps1 -LastMinutes 60 -ErrorsOnly -View Timeline
 
-# Real-time monitoring
+# Monitoreo en tiempo real
 .\ADFS-Inspector.ps1 -Follow -View Timeline
 ```
 
 ---
 
-## Parameters
+## Parámetros
 
-### Time Range
+### Rango de tiempo
 
-| Parameter | Type | Description |
+| Parámetro | Tipo | Descripción |
 |---|---|---|
-| `-Today` | Switch | Events since 00:00 today |
-| `-LastMinutes <int>` | Int | Events from the last N minutes (1–525600) |
+| `-Today` | Switch | Eventos desde las 00:00 del día actual |
+| `-LastMinutes <int>` | Int | Eventos de los últimos N minutos (1–525600) |
 
-If neither is specified, the tool reads up to `-MaxEvents` most recent events.
+Si no se especifica ninguno, la herramienta lee hasta `-MaxEvents` eventos más recientes.
 
-### Content Filters
+### Filtros de contenido
 
-| Parameter | Type | Description |
+| Parámetro | Tipo | Descripción |
 |---|---|---|
-| `-User <string>` | String | Filter by username/UPN. Wildcards supported: `*eva*` |
-| `-IP <string>` | String | Filter by client IP. Wildcards: `192.168.*` |
-| `-ActivityId <string>` | String | Show full authentication flow for a specific Activity ID |
-| `-EventId <int>` | Int | Filter by a specific Event ID |
-| `-Protocol <string>` | String | Filter by protocol: `WS-Trust`, `OAuth`, `SAML`, `MFA`, etc. |
-| `-RelyingParty <string>` | String | Filter by Relying Party name. Wildcards: `*Office 365*` |
+| `-User <string>` | String | Filtrar por usuario/UPN. Admite wildcards: `*eva*` |
+| `-IP <string>` | String | Filtrar por IP de cliente. Wildcards: `192.168.*` |
+| `-ActivityId <string>` | String | Mostrar el flujo completo de autenticación para un Activity ID |
+| `-EventId <int>` | Int | Filtrar por un Event ID concreto |
+| `-Protocol <string>` | String | Filtrar por protocolo: `WS-Trust`, `OAuth`, `SAML`, `MFA`, etc. |
+| `-RelyingParty <string>` | String | Filtrar por nombre de Relying Party. Wildcards: `*Office 365*` |
 
-### Severity Filters
+### Filtros de severidad
 
-| Parameter | Type | Description |
+| Parámetro | Tipo | Descripción |
 |---|---|---|
-| `-ErrorsOnly` | Switch | Show only error events |
-| `-WarningsOnly` | Switch | Show only warning events |
+| `-ErrorsOnly` | Switch | Mostrar solo eventos de error |
+| `-WarningsOnly` | Switch | Mostrar solo eventos de advertencia |
 
-### Output Modes
+### Modos de salida
 
-| Parameter | Type | Description |
+| Parámetro | Tipo | Descripción |
 |---|---|---|
-| `-View <string>` | String | `Detailed` (default) or `Timeline` |
-| `-Summary` | Switch | Show statistical summary instead of individual events |
-| `-Follow` | Switch | Real-time monitoring mode (Ctrl+C to stop) |
-| `-FollowInterval <int>` | Int | Polling interval in seconds for `-Follow` (default: 5) |
-| `-ListEvents` | Switch | Print the full Event ID catalog and exit |
+| `-View <string>` | String | `Detailed` (por defecto) o `Timeline` |
+| `-Summary` | Switch | Mostrar resumen estadístico en lugar de eventos individuales |
+| `-Follow` | Switch | Modo de monitoreo en tiempo real (Ctrl+C para detener) |
+| `-FollowInterval <int>` | Int | Intervalo de sondeo en segundos para `-Follow` (por defecto: 5) |
+| `-ListEvents` | Switch | Mostrar el catálogo completo de Event IDs conocidos y salir |
 
-### Export
+### Exportación
 
-| Parameter | Type | Description |
+| Parámetro | Tipo | Descripción |
 |---|---|---|
-| `-ExportCsv <path>` | String | Export results to CSV |
-| `-ExportJson <path>` | String | Export results to JSON |
-| `-ExportHtml <path>` | String | Export results as HTML dashboard |
+| `-ExportCsv <ruta>` | String | Exportar resultados a CSV |
+| `-ExportJson <ruta>` | String | Exportar resultados a JSON |
+| `-ExportHtml <ruta>` | String | Exportar resultados como dashboard HTML |
 
-### Advanced
+### Avanzado
 
-| Parameter | Type | Description |
+| Parámetro | Tipo | Descripción |
 |---|---|---|
-| `-LogName <string>` | String | Event log to read (default: `AD FS/Admin`) |
-| `-MaxEvents <int>` | Int | Maximum events to read (default: 500, max: 100000) |
+| `-LogName <string>` | String | Log de eventos a leer (por defecto: `AD FS/Admin`) |
+| `-MaxEvents <int>` | Int | Máximo de eventos a leer (por defecto: 500, máximo: 100000) |
 
 ---
 
-## Usage Examples
+## Ejemplos de uso
 
-### Daily Operations
+### Operaciones diarias
 
 ```powershell
-# Summary of today's authentications
+# Resumen de las autenticaciones de hoy
 .\ADFS-Inspector.ps1 -Today -Summary
 
-# Last hour, all events, detailed view
+# Última hora, todos los eventos, vista detallada
 .\ADFS-Inspector.ps1 -LastMinutes 60
 
-# Last hour, timeline view
+# Última hora, vista timeline
 .\ADFS-Inspector.ps1 -LastMinutes 60 -View Timeline
 ```
 
-### User Troubleshooting
+### Troubleshooting de usuarios
 
 ```powershell
-# All events for a specific user today
+# Todos los eventos de un usuario específico hoy
 .\ADFS-Inspector.ps1 -Today -User "eva@foxhaunt.es"
 
-# Only errors for that user
+# Solo errores de ese usuario
 .\ADFS-Inspector.ps1 -Today -User "eva@foxhaunt.es" -ErrorsOnly
 
-# User's activity with wildcard (partial UPN)
+# Actividad del usuario con wildcard (UPN parcial)
 .\ADFS-Inspector.ps1 -Today -User "*foxhaunt.es" -View Timeline
 ```
 
-### Authentication Flow Investigation
+### Investigación de flujos de autenticación
 
 ```powershell
-# Show the complete authentication flow for a specific Activity ID
+# Mostrar el flujo completo de autenticación para un Activity ID
 .\ADFS-Inspector.ps1 -ActivityId "3f2c1a4b-88d0-4e3a-b1c2-000000000001"
 
-# First find the Activity ID from a failure
+# Primero localizar el Activity ID desde un fallo
 .\ADFS-Inspector.ps1 -LastMinutes 30 -ErrorsOnly -View Timeline
-# Then drill into the flow:
-.\ADFS-Inspector.ps1 -ActivityId "<guid-from-above>"
+# Luego profundizar en el flujo:
+.\ADFS-Inspector.ps1 -ActivityId "<guid-del-paso-anterior>"
 ```
 
-### IP-Based Investigation
+### Investigación por IP
 
 ```powershell
-# All events from a suspicious IP
+# Todos los eventos desde una IP sospechosa
 .\ADFS-Inspector.ps1 -IP "10.0.0.50" -LastMinutes 60
 
-# Errors from an IP range
+# Errores desde un rango de IPs
 .\ADFS-Inspector.ps1 -IP "192.168.1.*" -ErrorsOnly -Today
 
-# Top IPs by activity
+# IPs más activas (ver sección Top Source IPs del resumen)
 .\ADFS-Inspector.ps1 -Today -Summary
 ```
 
-### Protocol Analysis
+### Análisis por protocolo
 
 ```powershell
-# OAuth authentications today
+# Autenticaciones OAuth del día
 .\ADFS-Inspector.ps1 -Today -Protocol "OAuth" -Summary
 
-# SAML failures
+# Fallos SAML
 .\ADFS-Inspector.ps1 -LastMinutes 120 -Protocol "SAML" -ErrorsOnly
 
-# MFA events
+# Eventos MFA
 .\ADFS-Inspector.ps1 -Today -Protocol "MFA" -View Timeline
 ```
 
-### Real-Time Monitoring
+### Monitoreo en tiempo real
 
 ```powershell
-# Monitor all events as they happen
+# Monitorear todos los eventos según ocurren
 .\ADFS-Inspector.ps1 -Follow
 
-# Monitor only errors, check every 10 seconds
+# Monitorear solo errores, sondeo cada 10 segundos
 .\ADFS-Inspector.ps1 -Follow -ErrorsOnly -FollowInterval 10
 
-# Monitor a specific user's authentication attempts
+# Monitorear intentos de autenticación de un usuario específico
 .\ADFS-Inspector.ps1 -Follow -User "admin@foxhaunt.es" -View Timeline
 ```
 
-### Exports & Reporting
+### Exportaciones e informes
 
 ```powershell
-# Daily HTML report
-.\ADFS-Inspector.ps1 -Today -ExportHtml "C:\Reports\adfs-$(Get-Date -f yyyyMMdd).html"
+# Informe HTML diario
+.\ADFS-Inspector.ps1 -Today -ExportHtml "C:\Informes\adfs-$(Get-Date -f yyyyMMdd).html"
 
-# Export all failures to CSV for Excel analysis
-.\ADFS-Inspector.ps1 -Today -ErrorsOnly -ExportCsv "C:\Reports\failures.csv"
+# Exportar todos los fallos a CSV para análisis en Excel
+.\ADFS-Inspector.ps1 -Today -ErrorsOnly -ExportCsv "C:\Informes\fallos.csv"
 
-# JSON export for SIEM ingestion
-.\ADFS-Inspector.ps1 -LastMinutes 60 -ExportJson "C:\Reports\adfs-events.json"
+# Exportación JSON para ingesta en SIEM
+.\ADFS-Inspector.ps1 -LastMinutes 60 -ExportJson "C:\Informes\adfs-eventos.json"
 
-# Export and display at the same time
-.\ADFS-Inspector.ps1 -Today -Summary -ExportHtml "C:\Reports\today.html"
+# Exportar y mostrar al mismo tiempo
+.\ADFS-Inspector.ps1 -Today -Summary -ExportHtml "C:\Informes\hoy.html"
 ```
 
-### Specific Event Investigation
+### Investigación de eventos específicos
 
 ```powershell
-# All AUTH_FAILURE events (EventId 364)
+# Todos los eventos AUTH_FAILURE (EventId 364)
 .\ADFS-Inspector.ps1 -Today -EventId 364
 
-# TOKEN_ISSUED events for a specific Relying Party
+# Eventos TOKEN_ISSUED para una Relying Party específica
 .\ADFS-Inspector.ps1 -Today -EventId 307 -RelyingParty "*Office 365*"
 
-# List all known Event IDs
+# Listar todos los Event IDs conocidos
 .\ADFS-Inspector.ps1 -ListEvents
 ```
 
 ---
 
-## Real Troubleshooting Scenarios
+## Escenarios reales de troubleshooting
 
-### Scenario 1: User reports "can't log in to Office 365"
+### Escenario 1: Usuario reporta "no puedo entrar a Office 365"
 
 ```powershell
-# Step 1: Check recent errors for the user
-.\ADFS-Inspector.ps1 -LastMinutes 30 -User "user@domain.com" -ErrorsOnly
+# Paso 1: Comprobar errores recientes del usuario
+.\ADFS-Inspector.ps1 -LastMinutes 30 -User "usuario@dominio.com" -ErrorsOnly
 
-# Step 2: If you find a failure, get the Activity ID from the output
-# Step 3: See the full authentication flow
-.\ADFS-Inspector.ps1 -ActivityId "GUID-FROM-STEP-2"
+# Paso 2: Si se encuentra un fallo, tomar el Activity ID de la salida
+# Paso 3: Ver el flujo de autenticación completo
+.\ADFS-Inspector.ps1 -ActivityId "GUID-DEL-PASO-2"
 
-# Look for: AUTH_FAILURE, ACCOUNT_LOCKED, MFA_FAILURE, EXTRANET_LOCKOUT
+# Buscar: AUTH_FAILURE, ACCOUNT_LOCKED, MFA_FAILURE, EXTRANET_LOCKOUT
 ```
 
-### Scenario 2: Spike in authentication failures — possible brute force
+### Escenario 2: Pico de fallos de autenticación — posible fuerza bruta
 
 ```powershell
-# Step 1: Get summary to see the magnitude
+# Paso 1: Obtener resumen para ver la magnitud
 .\ADFS-Inspector.ps1 -LastMinutes 60 -Summary
 
-# Step 2: See top failing IPs from the summary output
-# Step 3: Investigate the specific attacking IP
-.\ADFS-Inspector.ps1 -LastMinutes 60 -IP "suspicious.ip.here" -View Timeline
+# Paso 2: Ver las IPs con más fallos en la sección "Top Source IPs"
+# Paso 3: Investigar la IP sospechosa
+.\ADFS-Inspector.ps1 -LastMinutes 60 -IP "ip.sospechosa" -View Timeline
 
-# Look for: EXTRANET_LOCKOUT (516), repeated AUTH_FAILURE (364)
+# Buscar: EXTRANET_LOCKOUT (516), AUTH_FAILURE (364) repetidos
 ```
 
-### Scenario 3: MFA failures — is the MFA provider down?
+### Escenario 3: Fallos de MFA — ¿está caído el proveedor?
 
 ```powershell
-# Check MFA events across the last hour
+# Comprobar eventos MFA de la última hora
 .\ADFS-Inspector.ps1 -LastMinutes 60 -Protocol "MFA" -View Timeline
 
-# If you see MFA_PROVIDER_UNAVAILABLE (408), the adapter is unreachable
-# Check the flow of a specific MFA failure
-.\ADFS-Inspector.ps1 -ActivityId "GUID-OF-MFA-FAILURE"
+# Si aparece MFA_PROVIDER_UNAVAILABLE (408), el adaptador no está accesible
+# Investigar el flujo de un fallo MFA concreto
+.\ADFS-Inspector.ps1 -ActivityId "GUID-DEL-FALLO-MFA"
 ```
 
-### Scenario 4: Office 365 hybrid auth broken after certificate renewal
+### Escenario 4: Auth híbrida con Office 365 rota tras renovación de certificado
 
 ```powershell
-# Look for token signing / encryption errors
+# Buscar errores de firma/cifrado de token
 .\ADFS-Inspector.ps1 -Today -EventId 308  # TOKEN_SIGN_ERROR
 .\ADFS-Inspector.ps1 -Today -EventId 309  # TOKEN_ENCRYPT_ERROR
 
-# Check certificate-related system events
+# Comprobar eventos de sistema relacionados con certificados
 .\ADFS-Inspector.ps1 -Today -EventId 106  # CERTIFICATE_EXPIRED
 .\ADFS-Inspector.ps1 -Today -EventId 105  # CERTIFICATE_EXPIRING
 ```
 
-### Scenario 5: Generate daily security report
+### Escenario 5: Generar informe de seguridad diario
 
 ```powershell
-# Full HTML dashboard for today
+# Dashboard HTML completo del día
 .\ADFS-Inspector.ps1 -Today `
-    -ExportHtml "C:\Reports\adfs-$(Get-Date -f yyyy-MM-dd).html" `
+    -ExportHtml "C:\Informes\adfs-$(Get-Date -f yyyy-MM-dd).html" `
     -Summary
 ```
 
 ---
 
-## Testing Without an AD FS Server
+## Pruebas sin servidor AD FS
 
-Use the included test script to verify the parser, renderer, and all modules work correctly on any Windows machine with PowerShell 5.1:
+Utiliza el script de pruebas incluido para verificar que el parser, el renderer y todos los módulos funcionan correctamente en cualquier máquina Windows con PowerShell 5.1:
 
 ```powershell
 .\examples\test-parser.ps1
 ```
 
-This runs 9 tests covering: EventDictionary, severity helpers, filter logic, timeline grouping, detailed view, timeline view, summary, authentication flow view, and HTML export.
+Ejecuta 9 tests que cubren: EventDictionary, helpers de severidad, lógica de filtrado, agrupación de timeline, vista detallada, vista timeline, resumen, vista de flujo de autenticación y exportación HTML.
 
 ---
 
-## Architecture
+## Arquitectura
 
 ```
 ADFS-Inspector/
 │
-├── ADFS-Inspector.ps1          # Entry point — orchestration only
+├── ADFS-Inspector.ps1          # Punto de entrada — solo orquestación
 │
 ├── Modules/
-│   ├── EventDictionary.psm1   # Event ID catalog with name/severity/protocol
-│   ├── Parser.psm1            # Raw EventLogRecord → normalized PSCustomObject
-│   ├── Filters.psm1           # Predicate filtering + ETW FilterHashtable builder
-│   ├── Timeline.psm1          # Group by ActivityId, flow summaries
-│   ├── Renderer.psm1          # Write-Host output: detailed, timeline, flow, summary
-│   └── Utils.psm1             # CSV/JSON/HTML export + Follow mode
+│   ├── EventDictionary.psm1   # Catálogo de Event IDs con nombre/severidad/protocolo
+│   ├── Parser.psm1            # EventLogRecord crudo → PSCustomObject normalizado
+│   ├── Filters.psm1           # Filtrado por predicados + constructor de FilterHashtable
+│   ├── Timeline.psm1          # Agrupación por ActivityId, resúmenes de flujo
+│   ├── Renderer.psm1          # Salida Write-Host: detallada, timeline, flujo, resumen
+│   └── Utils.psm1             # Exportación CSV/JSON/HTML + modo Follow
 │
 ├── examples/
-│   ├── event-307-token-issued.txt  # Sample event messages for testing
+│   ├── event-307-token-issued.txt  # Mensajes de eventos de ejemplo para testing
 │   ├── event-364-auth-failure.txt
 │   ├── event-mfa-flow.txt
-│   └── test-parser.ps1             # Automated test suite (no AD FS needed)
+│   └── test-parser.ps1             # Suite de tests automatizados (sin AD FS)
 │
 └── README.md
 ```
 
-### Module dependencies
+### Dependencias entre módulos
 
 ```
-EventDictionary  ← (no deps)
+EventDictionary  ← (sin dependencias)
 Parser           ← EventDictionary
-Filters          ← (no deps on domain modules)
-Timeline         ← (no deps on domain modules)
+Filters          ← (sin dependencias de dominio)
+Timeline         ← (sin dependencias de dominio)
 Renderer         ← EventDictionary
-Utils            ← Parser, Filters, Renderer (via caller)
+Utils            ← Parser, Filters, Renderer (a través del llamador)
 ```
 
-No circular dependencies. Each module can be imported and tested in isolation.
+Sin dependencias circulares. Cada módulo puede importarse y probarse de forma aislada.
 
 ---
 
-## Extending for New Protocols
+## Extensión para nuevos protocolos
 
-To add support for a new protocol (e.g., Azure AD seamless SSO, WS-Federation B2B):
+Para añadir soporte a un nuevo protocolo (p. ej., SSO transparente de Azure AD, WS-Federation B2B):
 
-1. **Add Event IDs** in `Modules/EventDictionary.psm1` under `$script:EventCatalog`
-2. **Add regex patterns** in `Modules/Parser.psm1` under `$script:Patterns` if the new events have unique field formats
-3. **Add FlowStepOrder entries** in `Modules/Timeline.psm1` if the new events participate in authentication flows
-4. No changes needed in Filters, Renderer, Utils, or the main script
+1. **Añadir Event IDs** en `Modules/EventDictionary.psm1` dentro de `$script:EventCatalog`
+2. **Añadir patrones regex** en `Modules/Parser.psm1` dentro de `$script:Patterns` si los nuevos eventos tienen formatos de campo únicos
+3. **Añadir entradas en FlowStepOrder** en `Modules/Timeline.psm1` si los nuevos eventos participan en flujos de autenticación
+4. No es necesario modificar Filters, Renderer, Utils ni el script principal
 
 ---
 
-## Known AD FS Event IDs Reference
+## Referencia de Event IDs de AD FS
 
-| Range | Area |
+| Rango | Área |
 |---|---|
-| 100–108 | Service lifecycle, certificates, database |
-| 200–209 | Primary authentication (WS-Trust) |
-| 299–310 | Token issuance, claims pipeline |
-| 364, 403, 411–413 | Authentication and token errors |
-| 400–408 | MFA / additional authentication |
+| 100–108 | Ciclo de vida del servicio, certificados, base de datos |
+| 200–209 | Autenticación primaria (WS-Trust) |
+| 299–310 | Emisión de tokens, pipeline de claims |
+| 364, 403, 411–413 | Errores de autenticación y token |
+| 400–408 | MFA / autenticación adicional |
 | 510, 516–517 | WAP / Extranet lockout |
-| 600–606 | Device registration |
-| 700–704 | PRT / Seamless SSO |
-| 1000–1008 | Audit events |
+| 600–606 | Registro de dispositivos |
+| 700–704 | PRT / SSO transparente |
+| 1000–1008 | Eventos de auditoría |
 | 1100–1105 | SAML |
 | 1200–1208 | OAuth 2.0 / OpenID Connect |
 
-Run `.\ADFS-Inspector.ps1 -ListEvents` for the full catalog.
+Ejecuta `.\ADFS-Inspector.ps1 -ListEvents` para ver el catálogo completo.
 
 ---
 
-## Changelog
+## Historial de cambios
 
 ### v1.0.0 (2026-07-23)
-- Initial release
-- Protocols: WS-Trust, WS-Federation, SAML, OAuth 2.0, OIDC, MFA, Device Registration, PRT
-- Views: Detailed, Timeline, Authentication Flow, Summary
-- Exports: CSV, JSON, HTML dashboard
-- Follow mode (real-time)
-- 60+ known Event IDs
-- Full test suite (no AD FS server needed)
+- Versión inicial
+- Protocolos: WS-Trust, WS-Federation, SAML, OAuth 2.0, OIDC, MFA, Device Registration, PRT
+- Vistas: Detallada, Timeline, Flujo de autenticación, Resumen
+- Exportaciones: CSV, JSON, dashboard HTML
+- Modo Follow (tiempo real)
+- Más de 60 Event IDs conocidos
+- Suite de tests completa (no requiere servidor AD FS)
 
 ---
 
-## License
+## Licencia
 
-MIT License. See LICENSE file.
+Licencia MIT. Ver archivo LICENSE.
