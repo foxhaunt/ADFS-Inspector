@@ -301,6 +301,32 @@ function ConvertTo-AdfsEvent {
             $activityId = $xmlData['_CorrelationActivityID']
         }
 
+        # 2b. Post-proceso especifico por EventId
+        # Event 501 (CLAIM_ISSUED): ClaimType + ClaimValue, no IdentityName
+        if ($RawEvent.Id -eq 501) {
+            $claimType  = if ($xmlData.ContainsKey('ClaimType'))  { $xmlData['ClaimType']  } else { $null }
+            $claimValue = if ($xmlData.ContainsKey('ClaimValue')) { $xmlData['ClaimValue'] } else { $null }
+
+            # Solo mostrar ClaimValue como User si parece un UPN (tiene @)
+            # Los groupsid/SIDs no son identificadores de usuario utiles aqui
+            if ($claimValue -and $claimValue -match '@') {
+                $user = $claimValue
+            } else {
+                $user = $null
+            }
+
+            # Descripcion enriquecida con el tipo de claim
+            if ($claimType) {
+                $claimShort  = $claimType -replace '^.+[/:#]', ''
+                $description = "Claim: $claimShort"
+            }
+
+            # Guardar tipo=valor en ErrorDetail para vista detallada
+            if ($claimType -and $claimValue) {
+                $errorDetail = "$claimType = $claimValue"
+            }
+        }
+
         # 3. Obtener texto formateado del mensaje para el fallback regex
         $rawMsg = ''
         try   { $rawMsg = $RawEvent.FormatDescription() }
@@ -338,6 +364,11 @@ function ConvertTo-AdfsEvent {
         }
         if (-not $errorDetail) {
             $errorDetail = script:Invoke-RegexExtract -Text $rawMsg -Pattern $script:Patterns.ErrorDetail
+        }
+
+        # 4b. Guardia: descartar valores que son URIs de claim, no usuarios
+        if ($user -and ($user -like 'http://*' -or $user -like 'https://*' -or $user -like 'urn:*')) {
+            $user = $null
         }
 
         # 5. Si endpoint vacio, extraerlo de RequestUri

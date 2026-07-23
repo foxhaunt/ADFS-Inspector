@@ -60,9 +60,9 @@ $script:EventCatalog = @{
     338 = @{ Name = 'PROXY_TOKEN_ISSUED';        Severity = 'Success'; Protocol = 'WAP';       Description = 'Proxy issued token to client' }
     342 = @{ Name = 'WSTRUST_REQUEST';           Severity = 'Info';    Protocol = 'WS-Trust';  Description = 'WS-Trust token request received' }
     343 = @{ Name = 'WSTRUST_RESPONSE';          Severity = 'Info';    Protocol = 'WS-Trust';  Description = 'WS-Trust token response sent' }
-    # 500-502: Claims pipeline (uno por claim emitido)
+    # 500-502: Claims pipeline (un evento 501 por cada claim emitido)
     500 = @{ Name = 'CLAIMS_PIPELINE';           Severity = 'Info';    Protocol = 'Claims';    Description = 'Claims pipeline execution started' }
-    501 = @{ Name = 'CLAIM_ISSUED';              Severity = 'Info';    Protocol = 'Claims';    Description = 'Individual claim issued in pipeline (one event per claim)' }
+    501 = @{ Name = 'CLAIM_ISSUED';              Severity = 'Info';    Protocol = 'Claims';    Description = 'Claim issued (ClaimType=value, one event per claim)' }
     502 = @{ Name = 'CLAIMS_PIPELINE_END';       Severity = 'Info';    Protocol = 'Claims';    Description = 'Claims pipeline execution completed' }
 
     # ── Errores de autenticación (rango clásico AD FS 2.x / 3.x) ──────────
