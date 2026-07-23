@@ -153,9 +153,9 @@ function Export-ToHtml {
           <td class='user-cell'>$user</td>
           <td class='ip-cell'>$ip</td>
           <td class='mono'>$($ev.Protocol)</td>
-          <td class='mono' title='$ep'>$(if($ep.Length -gt 40){ $ep.Substring(0,40)+'…' } else { $ep })</td>
+          <td class='mono' title='$ep'>$(if($ep.Length -gt 40){ $ep.Substring(0,40)+'...' } else { $ep })</td>
           <td class='rp-cell' title='$rp'>$rp</td>
-          <td class='mono' style='font-size:10px;color:#6e7681;'>$(if($actId){ $actId.Substring(0,[Math]::Min(8,$actId.Length))+'…' } else { '' })</td>
+          <td class='mono' style='font-size:10px;color:#6e7681;'>$(if($actId){ $actId.Substring(0,[Math]::Min(8,$actId.Length))+'...' } else { '' })</td>
           <td style='color:#f85149;font-size:11px;'>$errD</td>
         </tr>")
     }
@@ -166,12 +166,12 @@ function Export-ToHtml {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ADFS-Inspector Report — $(Get-Date -Format 'yyyy-MM-dd HH:mm')</title>
+<title>ADFS-Inspector Report -- $(Get-Date -Format 'yyyy-MM-dd HH:mm')</title>
 <style>$($script:HtmlCss)</style>
 </head>
 <body>
-<h1>ADFS-Inspector — Authentication Log Report</h1>
-<p class="meta">Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  |  Window: $firstTime → $lastTime</p>
+<h1>ADFS-Inspector -- Authentication Log Report</h1>
+<p class="meta">Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  |  Window: $firstTime -&gt; $lastTime</p>
 
 <div class="stats">
   <div class="stat-card"><div class="label">Total Events</div><div class="value" style="color:#c9d1d9;">$total</div></div>
@@ -235,7 +235,7 @@ function Invoke-FollowMode {
     )
 
     Write-Host ''
-    Write-Host "  [*] FOLLOW MODE — $LogName" -ForegroundColor Cyan
+    Write-Host "  [*] FOLLOW MODE -- $LogName" -ForegroundColor Cyan
     Write-Host "  Interval: ${IntervalSeconds}s  |  View: $View  |  Press Ctrl+C to stop" -ForegroundColor DarkGray
     Write-Host ''
 
@@ -304,7 +304,7 @@ function Test-AdfsLogAccess {
         Write-Host "  [!] Log '$LogName' not found or not accessible." -ForegroundColor Red
         Write-Host "      Available AD FS logs:" -ForegroundColor DarkGray
         Get-WinEvent -ListLog 'AD FS*' -ErrorAction SilentlyContinue |
-            ForEach-Object { Write-Host "      — $($_.LogName)" -ForegroundColor DarkGray }
+            ForEach-Object { Write-Host "      -- $($_.LogName)" -ForegroundColor DarkGray }
         return $false
     }
 }
