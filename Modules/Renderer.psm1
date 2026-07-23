@@ -1,27 +1,27 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Renderizado de eventos AD FS en consola con colores y vistas múltiples.
+    Renderizado de eventos AD FS en consola con colores y vistas multiples.
 .DESCRIPTION
-    Contiene toda la lógica de presentación visual. No lee logs ni filtra.
+    Contiene toda la logica de presentacion visual. No lee logs ni filtra.
     Recibe objetos PSCustomObject del Parser y los muestra con Write-Host.
-    Compatible con PowerShell 5.1 (no usa Write-Information coloreado).
+    Compatible con PowerShell 5.1 (sin caracteres Unicode en literales de string).
 #>
 
 Set-StrictMode -Version 2.0
 
 # ---------------------------------------------------------------------------
-# Constantes de presentación
+# Constantes de presentacion (solo ASCII para compatibilidad PS 5.1 / Win-1252)
 # ---------------------------------------------------------------------------
-$script:Separator  = '─' * 70
-$script:ThinSep    = '·' * 70
+$script:Separator  = '-' * 70
+$script:ThinSep    = '.' * 70
 $script:ColLabel   = 'DarkCyan'
 $script:ColValue   = 'White'
 $script:ColMuted   = 'DarkGray'
 $script:ColBorder  = 'DarkGray'
 
 # ---------------------------------------------------------------------------
-# Función interna: Write-Host con color de severidad
+# Funcion interna: Write-Host con color de severidad
 # ---------------------------------------------------------------------------
 function script:Write-Severity {
     param(
@@ -38,7 +38,7 @@ function script:Write-Severity {
 }
 
 # ---------------------------------------------------------------------------
-# Función interna: imprimir línea de campo/valor
+# Funcion interna: imprimir linea de campo/valor
 # ---------------------------------------------------------------------------
 function script:Write-Field {
     param(
@@ -53,7 +53,7 @@ function script:Write-Field {
 }
 
 # ---------------------------------------------------------------------------
-# Función pública: vista detallada de un evento
+# Funcion publica: vista detallada de un evento
 # ---------------------------------------------------------------------------
 function Show-DetailedEvent {
     <#
@@ -76,7 +76,6 @@ function Show-DetailedEvent {
         $color    = Get-SeverityColor -Severity $Event.Severity
 
         Write-Host $script:Separator -ForegroundColor $script:ColBorder
-        # Cabecera: timestamp + icono + nombre del evento + EventId
         Write-Host "[$timeStr]  " -ForegroundColor $script:ColMuted -NoNewline
         Write-Host "$icon $($Event.EventName)" -ForegroundColor $color -NoNewline
         Write-Host "  (ID: $($Event.EventId))" -ForegroundColor $script:ColMuted
@@ -87,7 +86,6 @@ function Show-DetailedEvent {
 
         Write-Host ''
 
-        # Campos de identidad
         script:Write-Field 'User'          $Event.User
         script:Write-Field 'Client IP'     $Event.ClientIp
         script:Write-Field 'Protocol'      $Event.Protocol
@@ -99,7 +97,6 @@ function Show-DetailedEvent {
         script:Write-Field 'Correlation'   $Event.CorrelationId
         script:Write-Field 'Server'        $Event.MachineName
 
-        # Error detail si existe
         if ($Event.ErrorDetail -and $Event.Severity -in @('Error','Warning')) {
             Write-Host ''
             Write-Host '  ERROR DETAIL' -ForegroundColor $script:ColLabel
@@ -111,12 +108,12 @@ function Show-DetailedEvent {
 }
 
 # ---------------------------------------------------------------------------
-# Función pública: vista timeline (una línea por evento)
+# Funcion publica: vista timeline (una linea por evento)
 # ---------------------------------------------------------------------------
 function Show-TimelineEvent {
     <#
     .SYNOPSIS
-        Muestra un evento en formato de línea de timeline compacta.
+        Muestra un evento en formato de linea de timeline compacta.
     .PARAMETER Event
         PSCustomObject producido por ConvertTo-AdfsEvent.
     .EXAMPLE
@@ -149,12 +146,12 @@ function Show-TimelineEvent {
 }
 
 # ---------------------------------------------------------------------------
-# Función pública: mostrar el flujo de autenticación de un ActivityId
+# Funcion publica: mostrar el flujo de autenticacion de un ActivityId
 # ---------------------------------------------------------------------------
 function Show-AuthFlow {
     <#
     .SYNOPSIS
-        Muestra el flujo completo de una autenticación agrupada por ActivityId.
+        Muestra el flujo completo de una autenticacion agrupada por ActivityId.
     .PARAMETER ActivityId
         El GUID del Activity ID.
     .PARAMETER Flow
@@ -171,7 +168,6 @@ function Show-AuthFlow {
         [PSCustomObject[]]$Flow
     )
 
-    # Resumen del flujo
     $summary = Get-FlowSummary -Flow $Flow
     $outColor = switch ($summary.Outcome) {
         'Success'    { 'Green'  }
@@ -181,20 +177,33 @@ function Show-AuthFlow {
     }
 
     Write-Host ''
-    Write-Host ('═' * 70) -ForegroundColor $script:ColBorder
-    Write-Host "  AUTHENTICATION FLOW" -ForegroundColor Cyan
-    Write-Host ('═' * 70) -ForegroundColor $script:ColBorder
+    Write-Host ('=' * 70) -ForegroundColor $script:ColBorder
+    Write-Host '  AUTHENTICATION FLOW' -ForegroundColor Cyan
+    Write-Host ('=' * 70) -ForegroundColor $script:ColBorder
 
-    Write-Host "  Activity ID : " -ForegroundColor $script:ColLabel -NoNewline
+    Write-Host '  Activity ID : ' -ForegroundColor $script:ColLabel -NoNewline
     Write-Host $ActivityId -ForegroundColor White
-    Write-Host "  Outcome     : " -ForegroundColor $script:ColLabel -NoNewline
+    Write-Host '  Outcome     : ' -ForegroundColor $script:ColLabel -NoNewline
     Write-Host $summary.Outcome -ForegroundColor $outColor
-    Write-Host "  Duration    : " -ForegroundColor $script:ColLabel -NoNewline
+    Write-Host '  Duration    : ' -ForegroundColor $script:ColLabel -NoNewline
     Write-Host "$($summary.DurationMs) ms" -ForegroundColor White
-    if ($summary.User)        { Write-Host "  User        : " -ForegroundColor $script:ColLabel -NoNewline; Write-Host $summary.User        -ForegroundColor White }
-    if ($summary.ClientIp)    { Write-Host "  Client IP   : " -ForegroundColor $script:ColLabel -NoNewline; Write-Host $summary.ClientIp    -ForegroundColor White }
-    if ($summary.Protocol)    { Write-Host "  Protocol    : " -ForegroundColor $script:ColLabel -NoNewline; Write-Host $summary.Protocol    -ForegroundColor White }
-    if ($summary.RelyingParty){ Write-Host "  Relying Party:" -ForegroundColor $script:ColLabel -NoNewline; Write-Host " $($summary.RelyingParty)" -ForegroundColor White }
+
+    if ($summary.User) {
+        Write-Host '  User        : ' -ForegroundColor $script:ColLabel -NoNewline
+        Write-Host $summary.User -ForegroundColor White
+    }
+    if ($summary.ClientIp) {
+        Write-Host '  Client IP   : ' -ForegroundColor $script:ColLabel -NoNewline
+        Write-Host $summary.ClientIp -ForegroundColor White
+    }
+    if ($summary.Protocol) {
+        Write-Host '  Protocol    : ' -ForegroundColor $script:ColLabel -NoNewline
+        Write-Host $summary.Protocol -ForegroundColor White
+    }
+    if ($summary.RelyingParty) {
+        Write-Host '  Relying Party: ' -ForegroundColor $script:ColLabel -NoNewline
+        Write-Host $summary.RelyingParty -ForegroundColor White
+    }
 
     Write-Host ''
     Write-Host '  TIMELINE' -ForegroundColor $script:ColLabel
@@ -212,23 +221,24 @@ function Show-AuthFlow {
         Write-Host "$icon $($ev.EventName)" -ForegroundColor $color -NoNewline
 
         if ($ev.ErrorDetail -and $ev.Severity -in @('Error','Warning')) {
-            Write-Host "  → $($ev.ErrorDetail.Substring(0, [Math]::Min(60, $ev.ErrorDetail.Length)))" -ForegroundColor DarkRed
+            $detail = $ev.ErrorDetail.Substring(0, [Math]::Min(60, $ev.ErrorDetail.Length))
+            Write-Host "  -> $detail" -ForegroundColor DarkRed
         } else {
             Write-Host ''
         }
     }
 
-    Write-Host ('═' * 70) -ForegroundColor $script:ColBorder
+    Write-Host ('=' * 70) -ForegroundColor $script:ColBorder
     Write-Host ''
 }
 
 # ---------------------------------------------------------------------------
-# Función pública: mostrar resumen estadístico
+# Funcion publica: mostrar resumen estadistico
 # ---------------------------------------------------------------------------
 function Show-Summary {
     <#
     .SYNOPSIS
-        Muestra un resumen estadístico de la colección de eventos analizada.
+        Muestra un resumen estadistico de la coleccion de eventos analizada.
     .PARAMETER Events
         Array de PSCustomObject producido por ConvertTo-AdfsEvent.
     .EXAMPLE
@@ -247,41 +257,43 @@ function Show-Summary {
     $warnings = ($Events | Where-Object { $_.Severity -eq 'Warning'  }).Count
     $info     = ($Events | Where-Object { $_.Severity -eq 'Info'     }).Count
 
-    # Top usuarios con más errores
     $topUsers = $Events | Where-Object { $_.Severity -eq 'Error' -and $_.User } |
                 Group-Object User | Sort-Object Count -Descending | Select-Object -First 5
 
-    # Top IPs con más actividad
     $topIps = $Events | Where-Object { $_.ClientIp } |
               Group-Object ClientIp | Sort-Object Count -Descending | Select-Object -First 5
 
-    # Distribución por protocolo
     $byProtocol = $Events | Where-Object { $_.Protocol } |
                   Group-Object Protocol | Sort-Object Count -Descending
 
-    # Actividad IDs únicos
-    $uniqueFlows = ($Events | Where-Object { $_.ActivityId } | Select-Object -ExpandProperty ActivityId -Unique).Count
+    $uniqueFlows = ($Events | Where-Object { $_.ActivityId } |
+                   Select-Object -ExpandProperty ActivityId -Unique).Count
 
-    $firstTime = if ($total -gt 0) { ($Events | Sort-Object TimeCreated | Select-Object -First 1).TimeCreated } else { $null }
-    $lastTime  = if ($total -gt 0) { ($Events | Sort-Object TimeCreated | Select-Object -Last  1).TimeCreated } else { $null }
+    $firstTime = if ($total -gt 0) {
+        ($Events | Sort-Object TimeCreated | Select-Object -First 1).TimeCreated
+    } else { $null }
+    $lastTime = if ($total -gt 0) {
+        ($Events | Sort-Object TimeCreated | Select-Object -Last 1).TimeCreated
+    } else { $null }
 
     Write-Host ''
-    Write-Host ('═' * 70) -ForegroundColor $script:ColBorder
-    Write-Host '  ADFS-INSPECTOR  —  SUMMARY' -ForegroundColor Cyan
-    Write-Host ('═' * 70) -ForegroundColor $script:ColBorder
+    Write-Host ('=' * 70) -ForegroundColor $script:ColBorder
+    Write-Host '  ADFS-INSPECTOR  --  SUMMARY' -ForegroundColor Cyan
+    Write-Host ('=' * 70) -ForegroundColor $script:ColBorder
 
     if ($firstTime) {
-        Write-Host "  Window   : $($firstTime.ToString('yyyy-MM-dd HH:mm:ss'))  →  $($lastTime.ToString('yyyy-MM-dd HH:mm:ss'))" -ForegroundColor $script:ColMuted
+        $w1 = $firstTime.ToString('yyyy-MM-dd HH:mm:ss')
+        $w2 = $lastTime.ToString('yyyy-MM-dd HH:mm:ss')
+        Write-Host "  Window   : $w1  ->  $w2" -ForegroundColor $script:ColMuted
     }
     Write-Host "  Total    : $total events  |  $uniqueFlows unique flows" -ForegroundColor White
     Write-Host ''
 
-    # Barra de severidades
     Write-Host '  SEVERITY BREAKDOWN' -ForegroundColor $script:ColLabel
-    Write-Host "  [+] Success  : " -ForegroundColor Green  -NoNewline; Write-Host $success  -ForegroundColor White
-    Write-Host "  [!] Errors   : " -ForegroundColor Red    -NoNewline; Write-Host $errors   -ForegroundColor White
-    Write-Host "  [~] Warnings : " -ForegroundColor Yellow -NoNewline; Write-Host $warnings -ForegroundColor White
-    Write-Host "  [i] Info     : " -ForegroundColor Cyan   -NoNewline; Write-Host $info     -ForegroundColor White
+    Write-Host '  [+] Success  : ' -ForegroundColor Green  -NoNewline; Write-Host $success  -ForegroundColor White
+    Write-Host '  [!] Errors   : ' -ForegroundColor Red    -NoNewline; Write-Host $errors   -ForegroundColor White
+    Write-Host '  [~] Warnings : ' -ForegroundColor Yellow -NoNewline; Write-Host $warnings -ForegroundColor White
+    Write-Host '  [i] Info     : ' -ForegroundColor Cyan   -NoNewline; Write-Host $info     -ForegroundColor White
 
     if ($byProtocol.Count -gt 0) {
         Write-Host ''
@@ -310,21 +322,21 @@ function Show-Summary {
         }
     }
 
-    Write-Host ('═' * 70) -ForegroundColor $script:ColBorder
+    Write-Host ('=' * 70) -ForegroundColor $script:ColBorder
     Write-Host ''
 }
 
 # ---------------------------------------------------------------------------
-# Función pública: imprimir cabecera de sesión
+# Funcion publica: imprimir cabecera de sesion
 # ---------------------------------------------------------------------------
 function Show-Header {
     <#
     .SYNOPSIS
         Muestra la cabecera de inicio de ADFS-Inspector.
     .PARAMETER LogName
-        Nombre del log que se está analizando.
+        Nombre del log que se esta analizando.
     .PARAMETER FilterDesc
-        Descripción textual de los filtros activos.
+        Descripcion textual de los filtros activos.
     #>
     [CmdletBinding()]
     param(
@@ -333,9 +345,9 @@ function Show-Header {
     )
 
     Write-Host ''
-    Write-Host ('╔' + ('═' * 68) + '╗') -ForegroundColor Cyan
-    Write-Host '║           ADFS-INSPECTOR  v1.0  —  AD FS Log Analyzer           ║' -ForegroundColor Cyan
-    Write-Host ('╚' + ('═' * 68) + '╝') -ForegroundColor Cyan
+    Write-Host ('+' + ('=' * 68) + '+') -ForegroundColor Cyan
+    Write-Host '|           ADFS-INSPECTOR  v1.0  --  AD FS Log Analyzer           |' -ForegroundColor Cyan
+    Write-Host ('+' + ('=' * 68) + '+') -ForegroundColor Cyan
     Write-Host "  Log    : $LogName" -ForegroundColor $script:ColMuted
     Write-Host "  Time   : $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor $script:ColMuted
     if ($FilterDesc) {
@@ -345,7 +357,7 @@ function Show-Header {
 }
 
 # ---------------------------------------------------------------------------
-# Función pública: imprimir mensaje de estado (no event)
+# Funcion publica: imprimir mensaje de estado (no event)
 # ---------------------------------------------------------------------------
 function Show-StatusMessage {
     <#
