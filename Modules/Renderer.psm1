@@ -257,16 +257,16 @@ function Show-Summary {
     $warnings = ($Events | Where-Object { $_.Severity -eq 'Warning'  }).Count
     $info     = ($Events | Where-Object { $_.Severity -eq 'Info'     }).Count
 
-    $topUsers = $Events | Where-Object { $_.Severity -eq 'Error' -and $_.User } |
-                Group-Object User | Sort-Object Count -Descending | Select-Object -First 5
+    $topUsers = @($Events | Where-Object { $_.Severity -eq 'Error' -and $_.User } |
+                Group-Object User | Sort-Object Count -Descending | Select-Object -First 5)
 
-    $topIps = $Events | Where-Object { $_.ClientIp } |
-              Group-Object ClientIp | Sort-Object Count -Descending | Select-Object -First 5
+    $topIps = @($Events | Where-Object { $_.ClientIp } |
+              Group-Object ClientIp | Sort-Object Count -Descending | Select-Object -First 5)
 
-    $byProtocol = $Events | Where-Object { $_.Protocol } |
-                  Group-Object Protocol | Sort-Object Count -Descending
+    $byProtocol = @($Events | Where-Object { $_.Protocol } |
+                  Group-Object Protocol | Sort-Object Count -Descending)
 
-    $uniqueFlows = ($Events | Where-Object { $_.ActivityId } |
+    $uniqueFlows = @($Events | Where-Object { $_.ActivityId } |
                    Select-Object -ExpandProperty ActivityId -Unique).Count
 
     $firstTime = if ($total -gt 0) {
