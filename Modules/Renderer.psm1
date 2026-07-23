@@ -48,7 +48,7 @@ function script:Write-Field {
     )
     if ([string]::IsNullOrEmpty($Value)) { return }
     $pad = ' ' * $Indent
-    Write-Host "${pad}$($Label.PadRight(15)}" -ForegroundColor $script:ColLabel -NoNewline
+    Write-Host "${pad}$($Label.PadRight(15))" -ForegroundColor $script:ColLabel -NoNewline
     Write-Host ": $Value" -ForegroundColor $script:ColValue
 }
 
