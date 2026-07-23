@@ -1,0 +1,22 @@
+--- ADFS-Inspector Example Event: 307 TOKEN ISSUED ---
+--- Simulates a successful WS-Trust authentication ---
+
+EventId:     307
+TimeCreated: 2026-07-23 12:14:51.443
+Level:       Information
+LogName:     AD FS/Admin
+
+Message:
+The Federation Service successfully issued a security token.
+
+User Name: eva@foxhaunt.es
+Endpoint: /adfs/services/trust/13/usernamemixed
+Relying Party: Microsoft Office 365 Identity Platform
+Claims Provider: Active Directory
+Client IP: 192.168.1.15
+Activity ID: {3f2c1a4b-88d0-4e3a-b1c2-000000000001}
+Correlation ID: {a1b2c3d4-0000-0000-0000-000000000001}
+Request URI: https://sts.foxhaunt.es/adfs/services/trust/13/usernamemixed
+
+--- Usage: test the parser with this sample message ---
+--- In production, Get-WinEvent returns EventLogRecord objects ---

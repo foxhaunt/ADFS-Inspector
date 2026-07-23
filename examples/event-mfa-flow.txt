@@ -1,0 +1,60 @@
+--- ADFS-Inspector Example: Full MFA Authentication Flow ---
+--- Same Activity ID across all events → shows as correlated flow ---
+
+Activity ID: {3f2c1a4b-88d0-4e3a-b1c2-000000000003}
+User: svc@foxhaunt.es
+Client IP: 10.0.0.5
+
+--- Event 1: Auth Request ---
+EventId:     200
+TimeCreated: 2026-07-23 12:15:03.001
+Message:
+Authentication request received.
+User Name: svc@foxhaunt.es
+Client IP: 10.0.0.5
+Endpoint: /adfs/ls/
+Relying Party: Microsoft Office 365 Identity Platform
+Activity ID: {3f2c1a4b-88d0-4e3a-b1c2-000000000003}
+
+--- Event 2: MFA Required ---
+EventId:     400
+TimeCreated: 2026-07-23 12:15:03.198
+Message:
+Additional authentication required.
+User Name: svc@foxhaunt.es
+Client IP: 10.0.0.5
+Endpoint: /adfs/ls/
+Claims Provider: Active Directory
+Activity ID: {3f2c1a4b-88d0-4e3a-b1c2-000000000003}
+
+--- Event 3: MFA Challenge Sent ---
+EventId:     401
+TimeCreated: 2026-07-23 12:15:03.450
+Message:
+MFA challenge sent to user device.
+User Name: svc@foxhaunt.es
+Activity ID: {3f2c1a4b-88d0-4e3a-b1c2-000000000003}
+
+--- Event 4: MFA Success ---
+EventId:     402
+TimeCreated: 2026-07-23 12:15:08.901
+Message:
+Multi-factor authentication succeeded.
+User Name: svc@foxhaunt.es
+Client IP: 10.0.0.5
+Activity ID: {3f2c1a4b-88d0-4e3a-b1c2-000000000003}
+
+--- Event 5: Token Issued ---
+EventId:     307
+TimeCreated: 2026-07-23 12:15:09.012
+Message:
+The Federation Service successfully issued a security token.
+User Name: svc@foxhaunt.es
+Endpoint: /adfs/ls/
+Relying Party: Microsoft Office 365 Identity Platform
+Claims Provider: Active Directory
+Client IP: 10.0.0.5
+Activity ID: {3f2c1a4b-88d0-4e3a-b1c2-000000000003}
+
+--- Use this flow with: ---
+--- .\ADFS-Inspector.ps1 -ActivityId "3f2c1a4b-88d0-4e3a-b1c2-000000000003" ---

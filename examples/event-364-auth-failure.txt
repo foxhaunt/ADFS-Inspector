@@ -1,0 +1,19 @@
+--- ADFS-Inspector Example Event: 364 AUTH FAILURE ---
+--- Simulates a failed authentication attempt ---
+
+EventId:     364
+TimeCreated: 2026-07-23 12:15:01.112
+Level:       Error
+LogName:     AD FS/Admin
+
+Message:
+The Federation Service failed to issue a token because authentication failed.
+
+User Name: admin@foxhaunt.es
+Endpoint: /adfs/services/trust/13/usernamemixed
+Client IP: 10.0.0.50
+Activity ID: {3f2c1a4b-88d0-4e3a-b1c2-000000000002}
+Correlation ID: {a1b2c3d4-0000-0000-0000-000000000002}
+Error: The user name or password is incorrect.
+Failure Reason: Invalid credentials
+Request URI: https://sts.foxhaunt.es/adfs/services/trust/13/usernamemixed
